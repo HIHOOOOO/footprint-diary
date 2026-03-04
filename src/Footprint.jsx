@@ -4,7 +4,7 @@ import {
   CloudRain, Sun, Snowflake, Plus,
   MapPin, Clock, MessageCircle, Send, Flower
 } from 'lucide-react';
-import { Button, TextField, IconButton, ConfirmDialog, AlertDialog } from '@toss/tds-mobile';
+import { Button, IconButton, ConfirmDialog, AlertDialog } from '@toss/tds-mobile';
 
 // --- 유틸리티 ---
 const MOCK_ADDRESSES = ["성수이로 123", "서울숲길 45", "뚝섬로 11", "왕십리로 88", "아차산로 5"];
@@ -478,7 +478,6 @@ export default function App() {
 
       <div className="fixed bottom-0 left-1/2 -translate-x-1/2 z-30" style={{ paddingBottom: 'max(40px, env(safe-area-inset-bottom))' }}>
         <Button
-          whileTap={{ scale: 0.9 }}
           onClick={addFootprint}
           loading={isLocating}
           disabled={isLocating}
