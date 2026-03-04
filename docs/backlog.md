@@ -20,17 +20,23 @@
 - [x] Tailwind CSS 설치 및 설정 (@tailwindcss/vite, @import "tailwindcss")
 - [x] TDSMobileProvider 브라우저 환경 분기 (흰 화면 원인: ThemeProvider 미적용)
 - [x] adb reverse 연결 (tcp:8081, tcp:5173, tcp:5174)
+- [x] 앱 시작 시 오늘 날짜로 초기화 (new Date() 하드코딩 제거)
+- [x] 날씨 선택 localStorage 저장/복원 (fp-weather 키)
+- [x] GPS enableHighAccuracy false, timeout 5초로 단축
+- [x] GPS 거부 시 발자국 미추가 + AlertDialog 안내
+- [x] ConfirmDialog 문구에 "기기에만 저장" 안내 추가
+- [x] HTML lang="en" → lang="ko" 수정
 
 ## 진행 중
-- [ ] 댓글 흰 화면 플래시 재현 및 원인 확정 (ThrottleRef + CSS max-height 전환 적용했으나 미해결)
-- [ ] GPS 주소 이상 파악 (Nominatim rate limiting 의심, 코드 미변경)
+- [x] 댓글 흰 화면 플래시 해결
+- [x] GPS 주소 이상 파악 → 테스트 시 정상 확인 (Nominatim 정상 동작)
 - [x] 에뮬레이터 앱 화면 실제 확인 → granite.config host 'localhost' 고정으로 해결
 
 ## 예정
 - [x] 날씨/날짜 버튼 TDS 대체 방안 검토 → 날짜 nav IconButton 교체 완료, 날씨 버튼은 TDS 아이콘 미지원으로 lucide 유지
 - [x] 토스 검수 대응: viewport 핀치줌 비활성화 (user-scalable=no)
 - [x] 토스 검수 대응: GPS 권한 사전 동의 TDS ConfirmDialog 추가
-- [ ] 토스 검수 대응: UX 항목 나머지 확인 (접근성, 텍스트, 비속어 등)
+- [x] 토스 검수 대응: UX 항목 코드 점검 완료 (lang, weather 저장, GPS 흐름, ConfirmDialog 동작)
 - [ ] 토스 앱 실기기 전체 테스트
 - [ ] 토스 콘솔 등록 및 검수 제출
 - [ ] GitHub 저장소 생성 및 푸시 (로컬 git 초기화 완료, 원격 연결 필요)
@@ -39,6 +45,7 @@
 ## 추후 할 수도 있는 것
 - [ ] 사이드바: 내 기록 모아보기
 - [ ] 데이터 다운받기 버튼
+- [ ] 현재 위치 날씨 읽어서 테마 자동 적용 (외부 날씨 API 연동 — 토스 외부 API 허용 여부 확인 필요)
 - [ ] 날씨와 연동한 테마
 - [ ] 해변가 등 테마 추가
 - [ ] 오늘의 일기 로그 쓰기

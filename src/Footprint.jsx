@@ -4,7 +4,7 @@ import {
   CloudRain, Sun, Snowflake, Plus,
   MapPin, Clock, MessageCircle, Send, Flower
 } from 'lucide-react';
-import { Button, TextField, IconButton, ConfirmDialog } from '@toss/tds-mobile';
+import { Button, TextField, IconButton, ConfirmDialog, AlertDialog } from '@toss/tds-mobile';
 
 // --- 유틸리티 ---
 const MOCK_ADDRESSES = ["성수이로 123", "서울숲길 45", "뚝섬로 11", "왕십리로 88", "아차산로 5"];
@@ -93,7 +93,7 @@ export default function App() {
   const canvasRef = useRef(null);
   const containerRef = useRef(null);
   
-  const [weather, setWeather] = useState('Rainy');
+  const [weather, setWeather] = useState(() => localStorage.getItem('fp-weather') ?? 'Rainy');
   const [date, setDate] = useState(() => new Date());
   const [footprints, setFootprints] = useState(() => loadFromStorage(new Date()) ?? []);
   const [selectedId, setSelectedId] = useState(null);
@@ -104,6 +104,7 @@ export default function App() {
   const [newComment, setNewComment] = useState("");
   const [showComments, setShowComments] = useState(false);
   const [showGpsConsent, setShowGpsConsent] = useState(false);
+  const [showGpsRequired, setShowGpsRequired] = useState(false);
   const pendingLocate = useRef(null);
 
   const particlesRef = useRef([]);
@@ -133,6 +134,7 @@ export default function App() {
   }, [footprints, date]);
 
   useEffect(() => {
+    localStorage.setItem('fp-weather', weather);
     particlesRef.current = [];
   }, [weather]);
   
@@ -342,9 +344,9 @@ export default function App() {
     const getCurrentPosition = () =>
       new Promise((resolve, reject) =>
         navigator.geolocation.getCurrentPosition(resolve, reject, {
-          enableHighAccuracy: true,
-          timeout: 10000,
-          maximumAge: 0,
+          enableHighAccuracy: false,
+          timeout: 5000,
+          maximumAge: 30000,
         })
       );
 
@@ -487,12 +489,20 @@ export default function App() {
         </Button>
       </div>
 
+      <AlertDialog
+        open={showGpsRequired}
+        onClose={() => setShowGpsRequired(false)}
+        title="위치 권한이 필요해요"
+        description="발자국 기록에는 현재 위치 접근 권한이 필요해요. 발자국을 남기려면 위치 권한을 허용해 주세요."
+        alertButton={<Button onClick={() => setShowGpsRequired(false)}>확인</Button>}
+      />
+
       <ConfirmDialog
         open={showGpsConsent}
         title="위치 권한 안내"
-        description="현재 위치를 기록하기 위해 위치 접근 권한이 필요해요. 허용하지 않아도 발자국을 남길 수 있어요."
+        description="발자국을 남기려면 현재 위치 접근 권한이 필요해요. 위치 정보는 서버에 전송되지 않고 내 기기에만 저장돼요."
         cancelButton={
-          <Button onClick={() => { localStorage.setItem('gps-consent', 'false'); setShowGpsConsent(false); pendingLocate.current?.(false); }}>
+          <Button onClick={() => { setShowGpsConsent(false); setShowGpsRequired(true); }}>
             허용 안 할게요
           </Button>
         }
