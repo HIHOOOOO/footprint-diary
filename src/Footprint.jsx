@@ -4,7 +4,7 @@ import {
   CloudRain, Sun, Snowflake, Plus,
   MapPin, Clock, MessageCircle, Send, Flower
 } from 'lucide-react';
-import { Button, TextField, IconButton } from '@toss/tds-mobile';
+import { Button, TextField, IconButton, ConfirmDialog } from '@toss/tds-mobile';
 
 // --- 유틸리티 ---
 const MOCK_ADDRESSES = ["성수이로 123", "서울숲길 45", "뚝섬로 11", "왕십리로 88", "아차산로 5"];
@@ -94,8 +94,8 @@ export default function App() {
   const containerRef = useRef(null);
   
   const [weather, setWeather] = useState('Rainy');
-  const [date, setDate] = useState(new Date(2026, 2, 2));
-  const [footprints, setFootprints] = useState(() => loadFromStorage(new Date(2026, 2, 2)) ?? []);
+  const [date, setDate] = useState(() => new Date());
+  const [footprints, setFootprints] = useState(() => loadFromStorage(new Date()) ?? []);
   const [selectedId, setSelectedId] = useState(null);
   const [isLocating, setIsLocating] = useState(false); 
   const [showCalendar, setShowCalendar] = useState(false);
@@ -103,6 +103,8 @@ export default function App() {
   const [popupPos, setPopupPos] = useState({ x: 0, y: 0 });
   const [newComment, setNewComment] = useState("");
   const [showComments, setShowComments] = useState(false);
+  const [showGpsConsent, setShowGpsConsent] = useState(false);
+  const pendingLocate = useRef(null);
 
   const particlesRef = useRef([]);
   const footprintsRef = useRef([]);
@@ -315,22 +317,12 @@ export default function App() {
     }
   };
 
-  const addFootprint = () => {
-    if (isLocating) return;
+  const doAddFootprint = (useGps) => {
     setIsLocating(true);
-
-    const getCurrentPosition = () =>
-      new Promise((resolve, reject) =>
-        navigator.geolocation.getCurrentPosition(resolve, reject, {
-          enableHighAccuracy: true,
-          timeout: 10000,
-          maximumAge: 0,
-        })
-      );
 
     const appendFootprint = (address) => {
       const id = Date.now();
-      const idx = footprints.length;
+      const idx = footprintsRef.current.length;
       const yPos = idx * 120;
       const xOffset = Math.sin(idx * 0.5) * 60;
       const angle = Math.cos(idx * 0.5) * 0.5;
@@ -342,15 +334,35 @@ export default function App() {
       setIsLocating(false);
     };
 
-    if (!navigator.geolocation) {
+    if (!useGps || !navigator.geolocation) {
       appendFootprint(MOCK_ADDRESSES[Math.floor(Math.random() * MOCK_ADDRESSES.length)]);
       return;
     }
+
+    const getCurrentPosition = () =>
+      new Promise((resolve, reject) =>
+        navigator.geolocation.getCurrentPosition(resolve, reject, {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 0,
+        })
+      );
 
     getCurrentPosition()
       .then(pos => reverseGeocode(pos.coords.latitude, pos.coords.longitude))
       .then(address => appendFootprint(address))
       .catch(() => appendFootprint(MOCK_ADDRESSES[Math.floor(Math.random() * MOCK_ADDRESSES.length)]));
+  };
+
+  const addFootprint = () => {
+    if (isLocating) return;
+    const consent = localStorage.getItem('gps-consent');
+    if (consent === null) {
+      pendingLocate.current = (granted) => doAddFootprint(granted);
+      setShowGpsConsent(true);
+      return;
+    }
+    doAddFootprint(consent === 'true');
   };
 
   const handleCanvasClick = (e) => {
@@ -474,6 +486,22 @@ export default function App() {
           <Plus size={32} />
         </Button>
       </div>
+
+      <ConfirmDialog
+        open={showGpsConsent}
+        title="위치 권한 안내"
+        description="현재 위치를 기록하기 위해 위치 접근 권한이 필요해요. 허용하지 않아도 발자국을 남길 수 있어요."
+        cancelButton={
+          <Button onClick={() => { localStorage.setItem('gps-consent', 'false'); setShowGpsConsent(false); pendingLocate.current?.(false); }}>
+            허용 안 할게요
+          </Button>
+        }
+        confirmButton={
+          <Button onClick={() => { localStorage.setItem('gps-consent', 'true'); setShowGpsConsent(false); pendingLocate.current?.(true); }}>
+            허용할게요
+          </Button>
+        }
+      />
     </div>
   );
 }

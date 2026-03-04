@@ -27,7 +27,10 @@
 - [x] 에뮬레이터 앱 화면 실제 확인 → granite.config host 'localhost' 고정으로 해결
 
 ## 예정
-- [ ] 날씨/날짜 버튼 TDS 대체 방안 검토 (현재 lucide 아이콘 사용으로 IconButton 미적용)
+- [x] 날씨/날짜 버튼 TDS 대체 방안 검토 → 날짜 nav IconButton 교체 완료, 날씨 버튼은 TDS 아이콘 미지원으로 lucide 유지
+- [x] 토스 검수 대응: viewport 핀치줌 비활성화 (user-scalable=no)
+- [x] 토스 검수 대응: GPS 권한 사전 동의 TDS ConfirmDialog 추가
+- [ ] 토스 검수 대응: UX 항목 나머지 확인 (접근성, 텍스트, 비속어 등)
 - [ ] 토스 앱 실기기 전체 테스트
 - [ ] 토스 콘솔 등록 및 검수 제출
 - [ ] GitHub 저장소 생성 및 푸시 (로컬 git 초기화 완료, 원격 연결 필요)
