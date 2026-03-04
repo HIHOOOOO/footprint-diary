@@ -97,7 +97,7 @@ export default function App() {
   const [date, setDate] = useState(() => new Date());
   const [footprints, setFootprints] = useState(() => loadFromStorage(new Date()) ?? []);
   const [selectedId, setSelectedId] = useState(null);
-  const [isLocating, setIsLocating] = useState(false); 
+  const [isLocating, setIsLocating] = useState(false);
   const [showCalendar, setShowCalendar] = useState(false);
   
   const [popupPos, setPopupPos] = useState({ x: 0, y: 0 });
