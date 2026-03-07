@@ -31,6 +31,8 @@
 - [x] 댓글 흰 화면 플래시 해결
 - [x] GPS 주소 이상 파악 → 테스트 시 정상 확인 (Nominatim 정상 동작)
 - [x] 에뮬레이터 앱 화면 실제 확인 → granite.config host 'localhost' 고정으로 해결
+- [x] TDS ConfirmDialog/AlertDialog 투명 배경 문제 해결 (CSS variables, colorPreference, canvas pause)
+- [x] 앱 번들 빌드 완료 (footprint-diary.ait)
 
 ## 예정
 - [x] 날씨/날짜 버튼 TDS 대체 방안 검토 → 날짜 nav IconButton 교체 완료, 날씨 버튼은 TDS 아이콘 미지원으로 lucide 유지
@@ -47,7 +49,9 @@
 - [ ] 실기기에서 GPS 응답 속도 실측 (체크리스트 "인터랙션 반응 2초 이내" 기준 검증)
 
 ## 추후 할 수도 있는 것
-- [ ] 사이드바: 내 기록 모아보기
+- [x] 사이드바: 내 기록 모아보기 (Sidebar.jsx, LogsPage.jsx, FeedbackPage.jsx 구현 완료)
+- [ ] LogsPage 타임라인 디자인 적용 (DateGroup/FootprintRow — 빨간 dot + border-l-2 라인 스타일)
+- [ ] FeedbackPage 구글폼 URL 연결 (src/FeedbackPage.jsx의 FEEDBACK_FORM_URL 교체)
 - [ ] 데이터 다운받기 버튼
 - [ ] 현재 위치 날씨 읽어서 테마 자동 적용 (외부 날씨 API 연동 — 토스 외부 API 허용 여부 확인 필요)
 - [ ] 날씨와 연동한 테마

@@ -2,9 +2,12 @@ import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   CloudRain, Sun, Snowflake, Plus,
-  MapPin, Clock, MessageCircle, Send, Flower
+  MapPin, Clock, MessageCircle, Send, Flower, Menu
 } from 'lucide-react';
-import { Button, IconButton, ConfirmDialog, AlertDialog } from '@toss/tds-mobile';
+import { Button, IconButton, ConfirmDialog, AlertDialog, TextButton } from '@toss/tds-mobile';
+import Sidebar from './Sidebar';
+import LogsPage from './LogsPage';
+import FeedbackPage from './FeedbackPage';
 
 // --- 유틸리티 ---
 const MOCK_ADDRESSES = ["성수이로 123", "서울숲길 45", "뚝섬로 11", "왕십리로 88", "아차산로 5"];
@@ -99,6 +102,8 @@ export default function App() {
   const [selectedId, setSelectedId] = useState(null);
   const [isLocating, setIsLocating] = useState(false);
   const [showCalendar, setShowCalendar] = useState(false);
+  const [showSidebar, setShowSidebar] = useState(false);
+  const [currentPage, setCurrentPage] = useState(null); // null | 'logs' | 'feedback'
   
   const [popupPos, setPopupPos] = useState({ x: 0, y: 0 });
   const [newComment, setNewComment] = useState("");
@@ -115,6 +120,8 @@ export default function App() {
   const touchStartYRef = useRef(0);
   const lastPopupPosRef = useRef({ x: 0, y: 0 });
   const geocodeCache = useRef({});
+  const isDialogOpenRef = useRef(false);
+  useEffect(() => { isDialogOpenRef.current = showGpsConsent || showGpsRequired; }, [showGpsConsent, showGpsRequired]);
   const selectedIdRef = useRef(selectedId);
   useEffect(() => { selectedIdRef.current = selectedId; }, [selectedId]);
 
@@ -224,6 +231,10 @@ export default function App() {
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     const render = () => {
+      if (isDialogOpenRef.current) {
+        requestRef.current = requestAnimationFrame(render);
+        return;
+      }
       const dpr = window.devicePixelRatio || 1;
       const width = canvas.width / dpr;
       const height = canvas.height / dpr;
@@ -415,6 +426,17 @@ export default function App() {
         </div>
       )}
 
+      {/* 햄버거 버튼 */}
+      <div className="fixed top-4 left-4 z-30">
+        <button
+          onClick={() => setShowSidebar(true)}
+          className="w-10 h-10 bg-white/90 backdrop-blur shadow-sm rounded-full flex items-center justify-center border border-gray-100 text-gray-600 hover:bg-white transition-colors"
+          aria-label="메뉴 열기"
+        >
+          <Menu size={18} />
+        </button>
+      </div>
+
       <header className="fixed top-0 w-full z-20 flex justify-center pt-4 pointer-events-none">
         <div className="bg-white/90 backdrop-blur shadow-sm rounded-full px-5 py-2.5 flex items-center gap-4 pointer-events-auto border border-gray-100 relative">
           <IconButton name="icon-arrow-left-small-mono" aria-label="이전 날짜" variant="clear" iconSize={20} onClick={() => { const d = new Date(date); d.setDate(d.getDate() - 1); setDate(d); setFootprints(loadFromStorage(d) ?? []); setSelectedId(null); }} />
@@ -493,7 +515,7 @@ export default function App() {
         onClose={() => setShowGpsRequired(false)}
         title="위치 권한이 필요해요"
         description="발자국 기록에는 현재 위치 접근 권한이 필요해요. 발자국을 남기려면 위치 권한을 허용해 주세요."
-        alertButton={<Button onClick={() => setShowGpsRequired(false)}>확인</Button>}
+        alertButton={<AlertDialog.AlertButton onClick={() => setShowGpsRequired(false)}>확인</AlertDialog.AlertButton>}
       />
 
       <ConfirmDialog
@@ -501,16 +523,42 @@ export default function App() {
         title="위치 권한 안내"
         description="발자국을 남기려면 현재 위치 접근 권한이 필요해요. 위치 정보는 서버에 전송되지 않고 내 기기에만 저장돼요."
         cancelButton={
-          <Button onClick={() => { setShowGpsConsent(false); setShowGpsRequired(true); }}>
-            허용 안 할게요
-          </Button>
-        }
-        confirmButton={
-          <Button onClick={() => { localStorage.setItem('gps-consent', 'true'); setShowGpsConsent(false); pendingLocate.current?.(true); }}>
+          <Button variant="fill" onClick={() => { localStorage.setItem('gps-consent', 'true'); setShowGpsConsent(false); pendingLocate.current?.(true); }}>
             허용할게요
           </Button>
         }
+        confirmButton={
+          <TextButton size="small" style={{ color: '#3182f6' }} onClick={() => { setShowGpsConsent(false); setShowGpsRequired(true); }}>
+            허용 안 할게요
+          </TextButton>
+        }
       />
+
+      <Sidebar
+        open={showSidebar}
+        onClose={() => setShowSidebar(false)}
+        onNavigate={(page) => setCurrentPage(page)}
+      />
+
+      <AnimatePresence>
+        {currentPage === 'logs' && (
+          <LogsPage
+            key="logs"
+            onBack={() => setCurrentPage(null)}
+            onDateSelect={(d) => {
+              setDate(d);
+              setFootprints(loadFromStorage(d) ?? []);
+              setSelectedId(null);
+            }}
+          />
+        )}
+        {currentPage === 'feedback' && (
+          <FeedbackPage
+            key="feedback"
+            onBack={() => setCurrentPage(null)}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }

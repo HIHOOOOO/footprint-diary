@@ -14,6 +14,7 @@ const browserUserAgent = {
   fontScale: 1,
   isAndroid: false,
   isIOS: false,
+  colorPreference: 'light',
 } as const
 
 createRoot(document.getElementById('root')!).render(
