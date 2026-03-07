@@ -1,7 +1,13 @@
 import React, { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { Clock, MapPin, MessageSquare } from 'lucide-react';
+import { MessageSquare } from 'lucide-react';
 import { IconButton } from '@toss/tds-mobile';
+
+const TEAL       = '#2D8B78';
+const TEAL_LIGHT = '#D4EDE7';
+const TEAL_LINE  = '#B0DCCF';
+const TEAL_DARK  = '#1A3D35';
+const PAGE_BG    = '#EEF7F5';
 
 const toDateKey = (date) =>
   `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
@@ -53,37 +59,40 @@ export default function LogsPage({ onBack, onDateSelect }) {
       animate={{ x: 0 }}
       exit={{ x: '100%' }}
       transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-      className="fixed inset-0 z-50 bg-white flex flex-col"
-      style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+      className="fixed inset-0 z-50 flex flex-col"
+      style={{ backgroundColor: PAGE_BG, paddingBottom: 'env(safe-area-inset-bottom)' }}
     >
       {/* 헤더 */}
-      <div className="flex items-center gap-2 px-4 pt-12 pb-4 border-b border-gray-100">
+      <div className="flex items-center gap-2 px-4 pt-12 pb-4" style={{ backgroundColor: TEAL }}>
         <IconButton
           name="icon-arrow-left-small-mono"
           aria-label="뒤로"
           variant="clear"
           iconSize={20}
           onClick={onBack}
+          style={{ color: 'white' }}
         />
-        <h1 className="font-bold text-gray-800 text-base">로그 모아보기</h1>
+        <h1 className="font-bold text-base" style={{ color: 'white' }}>로그 모아보기</h1>
       </div>
 
       {/* 기간 필터 */}
-      <div className="px-5 pt-4 pb-3 border-b border-gray-50">
-        <p className="text-[11px] text-gray-400 font-medium mb-2">기간 검색</p>
+      <div className="px-4 pt-3 pb-4" style={{ backgroundColor: TEAL_LIGHT }}>
+        <p className="text-[13px] font-bold mb-2" style={{ color: TEAL_DARK }}>기간 검색</p>
         <div className="flex items-center gap-2">
           <input
             type="date"
             value={fromDate}
             onChange={(e) => setFromDate(e.target.value)}
-            className="flex-1 text-[13px] border border-gray-200 rounded-xl px-3 py-2.5 outline-none focus:border-gray-400 bg-gray-50"
+            className="flex-1 text-[13px] rounded-xl px-3 py-2.5 outline-none font-semibold bg-white"
+            style={{ border: `1.5px solid ${TEAL}`, color: TEAL_DARK }}
           />
-          <span className="text-gray-300">~</span>
+          <span className="font-bold" style={{ color: TEAL }}>~</span>
           <input
             type="date"
             value={toDate}
             onChange={(e) => setToDate(e.target.value)}
-            className="flex-1 text-[13px] border border-gray-200 rounded-xl px-3 py-2.5 outline-none focus:border-gray-400 bg-gray-50"
+            className="flex-1 text-[13px] rounded-xl px-3 py-2.5 outline-none font-semibold bg-white"
+            style={{ border: `1.5px solid ${TEAL}`, color: TEAL_DARK }}
           />
         </div>
       </div>
@@ -93,7 +102,7 @@ export default function LogsPage({ onBack, onDateSelect }) {
         {filteredLogs.length === 0 ? (
           <div className="text-center py-20">
             <p className="text-4xl mb-3">👣</p>
-            <p className="text-sm text-gray-400">해당 기간에 발자국 기록이 없어요</p>
+            <p className="text-sm" style={{ color: '#6D9E93' }}>해당 기간에 발자국 기록이 없어요</p>
           </div>
         ) : (
           filteredLogs.map(({ dateStr, footprints }) => (
@@ -112,21 +121,23 @@ export default function LogsPage({ onBack, onDateSelect }) {
 
 function DateGroup({ dateStr, footprints, onDateSelect }) {
   return (
-    <div className="rounded-2xl border border-gray-100 overflow-hidden">
+    <div className="bg-white rounded-2xl overflow-hidden">
       {/* 날짜 헤더 */}
       <button
         onClick={() => onDateSelect(new Date(dateStr + 'T00:00:00'))}
-        className="w-full flex items-center justify-between px-4 py-3 bg-gray-50 hover:bg-gray-100 transition-colors text-left"
+        className="w-full flex items-center justify-between px-4 pt-4 pb-3 text-left"
       >
-        <span className="text-[13px] font-bold text-gray-700">{formatDateLabel(dateStr)}</span>
-        <div className="flex items-center gap-1.5">
-          <span className="text-[11px] text-gray-400">발자국 {footprints.length}개</span>
-          <span className="text-gray-300 text-xs">›</span>
-        </div>
+        <span className="text-[15px] font-bold" style={{ color: TEAL_DARK }}>{formatDateLabel(dateStr)}</span>
+        <span
+          className="text-[11px] font-semibold px-3 py-1 rounded-full"
+          style={{ backgroundColor: TEAL, color: 'white' }}
+        >
+          🐾 {footprints.length}개
+        </span>
       </button>
 
-      {/* 발자국 목록 */}
-      <div className="divide-y divide-gray-50">
+      {/* 발자국 목록 - 타임라인 */}
+      <div className="mx-4 mb-4 pl-4" style={{ borderLeft: `2px solid ${TEAL_LINE}` }}>
         {footprints.map((fp) => (
           <FootprintRow key={fp.id} fp={fp} />
         ))}
@@ -136,28 +147,36 @@ function DateGroup({ dateStr, footprints, onDateSelect }) {
 }
 
 function FootprintRow({ fp }) {
-  const firstComment = fp.comments?.[0];
-  const preview = firstComment
-    ? firstComment.text.slice(0, 25) + (firstComment.text.length > 25 ? '...' : '')
-    : null;
+  const memos = fp.comments ?? [];
+  const visible = memos.slice(0, 2);
+  const extra = memos.length - visible.length;
 
   return (
-    <div className="px-4 py-3">
-      <div className="flex items-center gap-3">
-        <div className="flex items-center gap-1.5 text-gray-500">
-          <Clock size={12} className="text-gray-400" />
-          <span className="text-[13px] font-semibold">{fp.time}</span>
-        </div>
-        <div className="flex items-center gap-1 flex-1 min-w-0">
-          <MapPin size={12} className="text-gray-400 shrink-0" />
-          <span className="text-[12px] text-gray-500 truncate">{fp.address}</span>
-        </div>
+    <div className="relative py-2.5">
+      {/* 타임라인 dot */}
+      <div
+        className="absolute rounded-full"
+        style={{ width: 10, height: 10, backgroundColor: TEAL, left: -21, top: 10 }}
+      />
+      {/* 시간 · 주소 */}
+      <div className="flex items-center gap-1.5 flex-1 min-w-0">
+        <span className="text-[13px] font-semibold" style={{ color: '#1A1918' }}>{fp.time}</span>
+        <span style={{ color: '#D1D0CD' }}>·</span>
+        <span className="text-[13px] font-medium truncate" style={{ color: '#6D6C6A' }}>{fp.address}</span>
       </div>
-      {preview && (
-        <div className="flex items-start gap-1.5 mt-1.5 pl-0.5">
-          <MessageSquare size={11} className="text-gray-300 mt-0.5 shrink-0" />
-          <p className="text-[12px] text-gray-400 italic">{preview}</p>
+      {/* 메모 (최대 2개) */}
+      {visible.map((c, i) => (
+        <div key={i} className="flex items-center gap-1.5 mt-1">
+          <MessageSquare size={13} style={{ color: TEAL, flexShrink: 0 }} />
+          <p className="text-[12px] font-medium" style={{ color: '#3D5C55' }}>
+            {c.text.slice(0, 30)}{c.text.length > 30 ? '...' : ''}
+          </p>
         </div>
+      ))}
+      {extra > 0 && (
+        <p className="text-[11px] font-semibold mt-1 pl-5" style={{ color: TEAL }}>
+          + {extra}개 더 보기
+        </p>
       )}
     </div>
   );

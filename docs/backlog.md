@@ -39,9 +39,10 @@
 - [x] 토스 검수 대응: viewport 핀치줌 비활성화 (user-scalable=no)
 - [x] 토스 검수 대응: GPS 권한 사전 동의 TDS ConfirmDialog 추가
 - [x] 토스 검수 대응: UX 항목 코드 점검 완료 (lang, weather 저장, GPS 흐름, ConfirmDialog 동작)
-- [ ] 토스 앱 실기기 전체 테스트
+- [ ] 토스 앱 실기기 전체 테스트 (내가 직접)
 - [ ] 토스 콘솔 등록 및 검수 제출
 - [ ] GitHub 저장소 생성 및 푸시 (로컬 git 초기화 완료, 원격 연결 필요)
+- [ ] 앱 검수 완료 후 사이드바 + 광고 추가해서 재신청
 
 
 ## 추후 확인 필요
@@ -50,8 +51,11 @@
 
 ## 추후 할 수도 있는 것
 - [x] 사이드바: 내 기록 모아보기 (Sidebar.jsx, LogsPage.jsx, FeedbackPage.jsx 구현 완료)
-- [ ] LogsPage 타임라인 디자인 적용 (DateGroup/FootprintRow — 빨간 dot + border-l-2 라인 스타일)
-- [ ] FeedbackPage 구글폼 URL 연결 (src/FeedbackPage.jsx의 FEEDBACK_FORM_URL 교체)
+- [x] LogsPage 타임라인 디자인 코드 적용 (pencil 디자인 → 실제 구현, Forest Teal 팔레트)
+- [x] LogsPage 메모 최대 2개 표시 정책 구현 (초과 시 "+ N개 더 보기")
+- [x] FeedbackPage 구글폼 URL 연결 (src/FeedbackPage.jsx의 FEEDBACK_FORM_URL 교체)
+- [ ] 마이그레이션 마크다운 파일 적용 (데이터 마이그레이션)
+- [ ] 광고 달기 (사업자 허가 후 — 광고 플랫폼 조사 필요)
 - [ ] 데이터 다운받기 버튼
 - [ ] 현재 위치 날씨 읽어서 테마 자동 적용 (외부 날씨 API 연동 — 토스 외부 API 허용 여부 확인 필요)
 - [ ] 날씨와 연동한 테마
@@ -59,4 +63,3 @@
 - [ ] 오늘의 일기 로그 쓰기
 - [ ] 머문 시간
 - [ ] 기록 푸시 설정 기능
-- [ ] 광고 달기

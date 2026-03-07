@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { BookOpen, MessageSquareHeart, ChevronRight, Footprints } from 'lucide-react';
+import { BookOpen, MessageSquareHeart, ChevronRight } from 'lucide-react';
 import { IconButton } from '@toss/tds-mobile';
 
 export default function Sidebar({ open, onClose, onNavigate }) {
@@ -35,7 +35,7 @@ export default function Sidebar({ open, onClose, onNavigate }) {
             {/* 헤더 */}
             <div className="flex items-center justify-between px-5 pt-14 pb-6 border-b border-gray-100">
               <div className="flex items-center gap-2">
-                <Footprints size={20} className="text-[#FF5A42]" />
+                <img src="/footprint-icon-mono.svg" alt="" width={20} height={20} />
                 <span className="font-bold text-gray-800 text-lg">발자국 일기</span>
               </div>
               <IconButton name="icon-x-mono" aria-label="닫기" variant="clear" iconSize={18} onClick={onClose} />

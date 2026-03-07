@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { IconButton } from '@toss/tds-mobile';
 
 // 구글폼 URL을 여기에 넣으세요
-export const FEEDBACK_FORM_URL = "https://docs.google.com/forms/d/e/YOUR_FORM_ID/viewform?embedded=true";
+export const FEEDBACK_FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLSduWPGWpWN621lt9MmWYc1QFCXWQHU_5DB2SaXASdJrg05_nA/viewform?embedded=true";
 
 const isPlaceholder = FEEDBACK_FORM_URL.includes('YOUR_FORM_ID');
 
