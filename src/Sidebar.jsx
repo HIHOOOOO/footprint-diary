@@ -1,9 +1,45 @@
-import React from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { BookOpen, MessageSquareHeart, ChevronRight } from 'lucide-react';
 import { IconButton } from '@toss/tds-mobile';
+import { TossAds } from '@apps-in-toss/web-framework';
+
+function useTossBanner() {
+  const [isInitialized, setIsInitialized] = useState(false);
+
+  useEffect(() => {
+    if (isInitialized) return;
+    try { if (!TossAds.initialize.isSupported()) return; } catch { return; }
+
+    TossAds.initialize({
+      callbacks: {
+        onInitialized: () => setIsInitialized(true),
+        onInitializationFailed: (err) => console.error('TossAds 초기화 실패:', err),
+      },
+    });
+  }, [isInitialized]);
+
+  return isInitialized;
+}
 
 export default function Sidebar({ open, onClose, onNavigate }) {
+  const bannerRef = useRef(null);
+  const isInitialized = useTossBanner();
+  const [adsSupported] = useState(() => {
+    try { return TossAds.attachBanner.isSupported(); } catch { return false; }
+  });
+
+  useEffect(() => {
+    if (!open || !isInitialized || !adsSupported || !bannerRef.current) return;
+
+    const attached = TossAds.attachBanner('ait-ad-test-banner-id', bannerRef.current, {
+      theme: 'auto',
+      tone: 'blackAndWhite',
+      variant: 'card',
+    });
+
+    return () => attached?.destroy();
+  }, [open, isInitialized, adsSupported]);
   const handleNav = (page) => {
     onClose();
     onNavigate(page);
@@ -58,9 +94,10 @@ export default function Sidebar({ open, onClose, onNavigate }) {
             </nav>
 
             {/* 광고 배너 */}
-            <div className="mx-4 mb-8 h-14 rounded-2xl bg-gray-100 border border-gray-200 flex items-center justify-center">
-              <span className="text-xs text-gray-400 font-medium tracking-wider">AD</span>
-            </div>
+            {adsSupported
+              ? <div ref={bannerRef} style={{ width: '100%', height: '96px' }} className="mb-8" />
+              : null
+            }
           </motion.div>
         </>
       )}
