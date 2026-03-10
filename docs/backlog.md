@@ -49,6 +49,8 @@
 - [ ] AIT 콘솔에서 브랜드 아이콘(모노톤) 개별 등록 확인 (샌드박스에서 미표시 → 콘솔 등록 후 재확인)
 - [ ] 실기기에서 GPS 응답 속도 실측 (체크리스트 "인터랙션 반응 2초 이내" 기준 검증)
 
+- [x] SDK 2.0.1 마이그레이션 (`@apps-in-toss/web-framework` 2.0.1, `ait build` 전환)
+
 ## 추후 할 수도 있는 것
 - [x] 사이드바: 내 기록 모아보기 (Sidebar.jsx, LogsPage.jsx, FeedbackPage.jsx 구현 완료)
 - [x] LogsPage 타임라인 디자인 코드 적용 (pencil 디자인 → 실제 구현, Forest Teal 팔레트)

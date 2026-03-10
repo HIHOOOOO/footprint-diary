@@ -50,11 +50,11 @@ const MiniCalendar = ({ selectedDate, onSelect, onClose }) => {
   const month = viewDate.getMonth();
   
   const daysInMonth = new Date(year, month + 1, 0).getDate();
-  const firstDay = new Date(year, month, 1).getDay();
-  
+  const firstDay = (new Date(year, month, 1).getDay() + 6) % 7; // 월요일=0
+
   const days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
   const blanks = Array.from({ length: firstDay }, (_, i) => i);
-  const weekDays = ['D', 'S', 'T', 'Q', 'Q', 'S', 'S'];
+  const weekDays = ['월', '화', '수', '목', '금', '토', '일'];
 
   return (
     <motion.div 
@@ -523,14 +523,14 @@ export default function App() {
         title="위치 권한 안내"
         description="발자국을 남기려면 현재 위치 접근 권한이 필요해요. 위치 정보는 서버에 전송되지 않고 내 기기에만 저장돼요."
         cancelButton={
-          <Button variant="fill" onClick={() => { localStorage.setItem('gps-consent', 'true'); setShowGpsConsent(false); pendingLocate.current?.(true); }}>
-            허용할게요
-          </Button>
-        }
-        confirmButton={
           <TextButton size="small" style={{ color: '#3182f6' }} onClick={() => { setShowGpsConsent(false); setShowGpsRequired(true); }}>
             허용 안 할게요
           </TextButton>
+        }
+        confirmButton={
+          <Button variant="fill" onClick={() => { localStorage.setItem('gps-consent', 'true'); setShowGpsConsent(false); pendingLocate.current?.(true); }}>
+            허용할게요
+          </Button>
         }
       />
 
