@@ -426,8 +426,8 @@ export default function App() {
         </div>
       )}
 
-      {/* 햄버거 버튼 */}
-      <div className="fixed top-4 left-4 z-30">
+      {/* 햄버거 버튼 + 브랜드 로고 */}
+      <div className="fixed top-4 left-4 z-30 flex items-center gap-2">
         <button
           onClick={() => setShowSidebar(true)}
           className="w-10 h-10 bg-white/90 backdrop-blur shadow-sm rounded-full flex items-center justify-center border border-gray-100 text-gray-600 hover:bg-white transition-colors"
@@ -435,6 +435,9 @@ export default function App() {
         >
           <Menu size={18} />
         </button>
+        <div className="bg-white/90 backdrop-blur shadow-sm rounded-full w-10 h-10 flex items-center justify-center border border-gray-100">
+          <img src="/footprint-icon-mono.svg" alt="발자국 일기" className="w-5 h-5" />
+        </div>
       </div>
 
       <header className="fixed top-0 w-full z-20 flex justify-center pt-4 pointer-events-none">
