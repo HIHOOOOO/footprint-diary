@@ -5,7 +5,7 @@ export default defineConfig({
   brand: {
     displayName: '발자국 일기',
     primaryColor: '#4ade80',
-    icon: '/footprint-icon-mono.svg',
+    icon: '/footprint-icon-mono.png',
   },
   web: {
     host: 'localhost',

@@ -70,10 +70,7 @@ export default function Sidebar({ open, onClose, onNavigate }) {
           >
             {/* 헤더 */}
             <div className="flex items-center justify-between px-5 pt-14 pb-6 border-b border-gray-100">
-              <div className="flex items-center gap-2">
-                <img src="/footprint-icon-mono.svg" alt="" width={20} height={20} />
-                <span className="font-bold text-gray-800 text-lg">발자국 일기</span>
-              </div>
+              <span className="font-bold text-gray-800 text-lg">발자국 일기</span>
               <IconButton name="icon-x-mono" aria-label="닫기" variant="clear" iconSize={18} onClick={onClose} />
             </div>
 
