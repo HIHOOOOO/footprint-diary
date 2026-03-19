@@ -32,7 +32,7 @@ export default function Sidebar({ open, onClose, onNavigate }) {
   useEffect(() => {
     if (!open || !isInitialized || !adsSupported || !bannerRef.current) return;
 
-    const attached = TossAds.attachBanner('ait-ad-test-banner-id', bannerRef.current, {
+    const attached = TossAds.attachBanner('ait.v2.live.428f012527bc4c38', bannerRef.current, {
       theme: 'auto',
       tone: 'blackAndWhite',
       variant: 'card',
@@ -69,7 +69,7 @@ export default function Sidebar({ open, onClose, onNavigate }) {
             className="fixed top-0 left-0 z-50 h-full w-4/5 max-w-xs bg-white shadow-2xl flex flex-col"
           >
             {/* 헤더 */}
-            <div className="flex items-center justify-between px-5 pt-14 pb-6 border-b border-gray-100">
+            <div className="flex items-center justify-between px-5 pt-6 pb-6 border-b border-gray-100">
               <span className="font-bold text-gray-800 text-lg">발자국 일기</span>
               <IconButton name="icon-x-mono" aria-label="닫기" variant="clear" iconSize={18} onClick={onClose} />
             </div>
