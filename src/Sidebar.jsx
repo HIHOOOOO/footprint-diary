@@ -1,6 +1,6 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { BookOpen, MessageSquareHeart, ChevronRight } from 'lucide-react';
+import { BookOpen, MessageSquareHeart, Settings, ChevronRight } from 'lucide-react';
 import { IconButton } from '@toss/tds-mobile';
 import { TossAds } from '@apps-in-toss/web-framework';
 
@@ -40,6 +40,7 @@ export default function Sidebar({ open, onClose, onNavigate }) {
 
     return () => attached?.destroy();
   }, [open, isInitialized, adsSupported]);
+
   const handleNav = (page) => {
     onClose();
     onNavigate(page);
@@ -75,7 +76,7 @@ export default function Sidebar({ open, onClose, onNavigate }) {
             </div>
 
             {/* 메뉴 */}
-            <nav className="flex-1 px-3 py-4 space-y-1">
+            <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
               <MenuItem
                 icon={<BookOpen size={20} className="text-gray-600" />}
                 label="로그 모아보기"
@@ -87,6 +88,12 @@ export default function Sidebar({ open, onClose, onNavigate }) {
                 label="의견 보내기"
                 description="앱 개선에 도움을 주세요"
                 onClick={() => handleNav('feedback')}
+              />
+              <MenuItem
+                icon={<Settings size={20} className="text-gray-600" />}
+                label="설정"
+                description="주소 표시 등 앱 설정"
+                onClick={() => handleNav('settings')}
               />
             </nav>
 

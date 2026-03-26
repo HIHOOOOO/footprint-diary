@@ -44,7 +44,7 @@ const getDefaultFrom = () => {
 
 const getDefaultTo = () => toDateKey(new Date());
 
-export default function LogsPage({ onBack, onDateSelect }) {
+export default function LogsPage({ onBack, onDateSelect, detailAddress }) {
   const [fromDate, setFromDate] = useState(getDefaultFrom);
   const [toDate, setToDate] = useState(getDefaultTo);
 
@@ -82,7 +82,12 @@ export default function LogsPage({ onBack, onDateSelect }) {
           <input
             type="date"
             value={fromDate}
-            onChange={(e) => setFromDate(e.target.value)}
+            max={toDate}
+            onChange={(e) => {
+              const v = e.target.value;
+              setFromDate(v);
+              if (v > toDate) setToDate(v);
+            }}
             className="flex-1 text-[13px] rounded-xl px-3 py-2.5 outline-none font-semibold bg-white"
             style={{ border: `1.5px solid ${TEAL}`, color: TEAL_DARK }}
           />
@@ -90,6 +95,8 @@ export default function LogsPage({ onBack, onDateSelect }) {
           <input
             type="date"
             value={toDate}
+            min={fromDate}
+            max={getDefaultTo()}
             onChange={(e) => setToDate(e.target.value)}
             className="flex-1 text-[13px] rounded-xl px-3 py-2.5 outline-none font-semibold bg-white"
             style={{ border: `1.5px solid ${TEAL}`, color: TEAL_DARK }}
@@ -139,14 +146,14 @@ function DateGroup({ dateStr, footprints, onDateSelect }) {
       {/* 발자국 목록 - 타임라인 */}
       <div className="mx-4 mb-4 pl-4" style={{ borderLeft: `2px solid ${TEAL_LINE}` }}>
         {footprints.map((fp) => (
-          <FootprintRow key={fp.id} fp={fp} />
+          <FootprintRow key={fp.id} fp={fp} detailAddress={detailAddress} />
         ))}
       </div>
     </div>
   );
 }
 
-function FootprintRow({ fp }) {
+function FootprintRow({ fp, detailAddress }) {
   const memos = fp.comments ?? [];
   const visible = memos.slice(0, 2);
   const extra = memos.length - visible.length;
@@ -162,7 +169,7 @@ function FootprintRow({ fp }) {
       <div className="flex items-center gap-1.5 flex-1 min-w-0">
         <span className="text-[13px] font-semibold" style={{ color: '#1A1918' }}>{fp.time}</span>
         <span style={{ color: '#D1D0CD' }}>·</span>
-        <span className="text-[13px] font-medium truncate" style={{ color: '#6D6C6A' }}>{fp.address}</span>
+        <span className="text-[13px] font-medium truncate" style={{ color: '#6D6C6A' }}>{detailAddress ? (fp.addressDetail ?? fp.address) : fp.address}</span>
       </div>
       {/* 메모 (최대 2개) */}
       {visible.map((c, i) => (

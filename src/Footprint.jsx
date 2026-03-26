@@ -4,13 +4,13 @@ import {
   CloudRain, Sun, Snowflake, Plus,
   MapPin, Clock, MessageCircle, Send, Flower, Menu
 } from 'lucide-react';
-import { Button, IconButton, ConfirmDialog, AlertDialog, TextButton } from '@toss/tds-mobile';
+import { Button, IconButton, ConfirmDialog } from '@toss/tds-mobile';
 import Sidebar from './Sidebar';
 import LogsPage from './LogsPage';
 import FeedbackPage from './FeedbackPage';
+import SettingsPage from './SettingsPage';
 
 // --- 유틸리티 ---
-const MOCK_ADDRESSES = ["성수이로 123", "서울숲길 45", "뚝섬로 11", "왕십리로 88", "아차산로 5"];
 
 const toDateKey = (date) =>
   `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
@@ -97,19 +97,25 @@ export default function App() {
   const containerRef = useRef(null);
   
   const [weather, setWeather] = useState(() => localStorage.getItem('fp-weather') ?? 'Rainy');
+  const [detailAddress, setDetailAddress] = useState(() => localStorage.getItem('fp-address-detail') === 'true');
+
+  const toggleDetailAddress = (v) => {
+    setDetailAddress(v);
+    localStorage.setItem('fp-address-detail', String(v));
+  };
   const [date, setDate] = useState(() => new Date());
   const [footprints, setFootprints] = useState(() => loadFromStorage(new Date()) ?? []);
   const [selectedId, setSelectedId] = useState(null);
   const [isLocating, setIsLocating] = useState(false);
   const [showCalendar, setShowCalendar] = useState(false);
   const [showSidebar, setShowSidebar] = useState(false);
-  const [currentPage, setCurrentPage] = useState(null); // null | 'logs' | 'feedback'
+  const [currentPage, setCurrentPage] = useState(null); // null | 'logs' | 'feedback' | 'settings'
   
   const [popupPos, setPopupPos] = useState({ x: 0, y: 0 });
   const [newComment, setNewComment] = useState("");
   const [showComments, setShowComments] = useState(false);
   const [showGpsConsent, setShowGpsConsent] = useState(false);
-  const [showGpsRequired, setShowGpsRequired] = useState(false);
+
   const pendingLocate = useRef(null);
 
   const particlesRef = useRef([]);
@@ -121,15 +127,15 @@ export default function App() {
   const lastPopupPosRef = useRef({ x: 0, y: 0 });
   const geocodeCache = useRef({});
   const isDialogOpenRef = useRef(false);
-  useEffect(() => { isDialogOpenRef.current = showGpsConsent || showGpsRequired; }, [showGpsConsent, showGpsRequired]);
+  useEffect(() => { isDialogOpenRef.current = showGpsConsent; }, [showGpsConsent]);
   const selectedIdRef = useRef(selectedId);
   useEffect(() => { selectedIdRef.current = selectedId; }, [selectedId]);
 
   const getEmptyStateContent = () => {
     switch(weather) {
-      case 'Sunny': return { text: "초원 위의 첫 발자국을 남겨보세요", emoji: "🌿" };
-      case 'Rainy': return { text: "빗속의 첫 발자국을 남겨보세요", emoji: "☔" };
-      case 'Snowy': return { text: "눈 위의 첫 발자국을 남겨보세요", emoji: "⛄" };
+      case 'Sunny': return { text: "초원 위에 첫 발자국을 남겨보세요", emoji: "🌿" };
+      case 'Rainy': return { text: "빗속에 첫 발자국을 남겨보세요", emoji: "☔" };
+      case 'Snowy': return { text: "눈 위에 첫 발자국을 남겨보세요", emoji: "⛄" };
       case 'CherryBlossom': return { text: "봄날의 첫 발자국을 남겨보세요", emoji: "🌸" };
       default: return { text: "첫 발자국을 남겨보세요", emoji: "👣" };
     }
@@ -139,6 +145,29 @@ export default function App() {
   useEffect(() => {
     saveToStorage(date, footprints);
   }, [footprints, date]);
+
+  // 주소 없는 발자국 자동 재시도 (날짜 변경 또는 마운트 시)
+  useEffect(() => {
+    const pending = footprints.filter(fp => !fp.address && fp.lat && fp.lon);
+    if (pending.length === 0) return;
+    pending.forEach(async (fp) => {
+      const result = await reverseGeocode(fp.lat, fp.lon);
+      if (!result) return;
+      setFootprints(prev => prev.map(f => f.id === fp.id ? { ...f, address: result.simple, addressDetail: result.detail } : f));
+    });
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // 상세 주소 설정 ON 시 addressDetail 없는 발자국 자동 채우기
+  useEffect(() => {
+    if (!detailAddress) return;
+    const pending = footprints.filter(fp => !fp.addressDetail && fp.lat && fp.lon);
+    if (pending.length === 0) return;
+    pending.forEach(async (fp) => {
+      const result = await reverseGeocode(fp.lat, fp.lon);
+      if (!result) return;
+      setFootprints(prev => prev.map(f => f.id === fp.id ? { ...f, addressDetail: result.detail } : f));
+    });
+  }, [detailAddress]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     localStorage.setItem('fp-weather', weather);
@@ -312,28 +341,46 @@ export default function App() {
     const key = `${lat.toFixed(3)},${lon.toFixed(3)}`;
     if (geocodeCache.current[key]) return geocodeCache.current[key];
     try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000);
       const res = await fetch(
         `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&accept-language=ko`,
-        { headers: { 'Accept-Language': 'ko' } }
+        { headers: { 'Accept-Language': 'ko' }, signal: controller.signal }
       );
+      clearTimeout(timeoutId);
       if (!res.ok) throw new Error('geocode failed');
       const data = await res.json();
       const a = data.address;
-      // 도로명 > 동네 > 시/군 순으로 의미있는 주소 조합
-      const road = a.road || a.pedestrian || a.suburb || a.neighbourhood || '';
-      const district = a.city_district || a.borough || a.town || a.village || '';
-      const result = road ? `${district ? district + ' ' : ''}${road}` : (a.city || a.county || '알 수 없는 위치');
+      const road = a.road || a.pedestrian || '';
+      const area = a.suburb || a.quarter || a.neighbourhood || a.hamlet || a.city_district || a.borough || a.district || a.town || a.village || '';
+      const city = a.city || a.county || '';
+
+      let simple, detail;
+      if (road && area) {
+        simple = `${area} ${road}`;
+        detail = `${area} ${road}${a.house_number ? ' ' + a.house_number : ''}`;
+      } else if (road) {
+        simple = `${city ? city + ' ' : ''}${road}`;
+        detail = `${city ? city + ' ' : ''}${road}${a.house_number ? ' ' + a.house_number : ''}`;
+      } else if (area) {
+        simple = `${city ? city + ' ' : ''}${area}`;
+        detail = simple;
+      } else {
+        simple = city || '알 수 없는 위치';
+        detail = simple;
+      }
+      const result = { simple, detail };
       geocodeCache.current[key] = result;
       return result;
     } catch {
-      return MOCK_ADDRESSES[Math.floor(Math.random() * MOCK_ADDRESSES.length)];
+      return null;
     }
   };
 
   const doAddFootprint = (useGps) => {
     setIsLocating(true);
 
-    const appendFootprint = (address) => {
+    const appendFootprint = (address, lat = null, lon = null, addressDetail = null) => {
       const id = Date.now();
       const idx = footprintsRef.current.length;
       const yPos = idx * 120;
@@ -341,14 +388,14 @@ export default function App() {
       const angle = Math.cos(idx * 0.5) * 0.5;
       setFootprints(prev => [
         ...prev,
-        { id, x: xOffset, y: yPos, rotation: angle, type: idx % 2 === 0 ? 'left' : 'right', time: generateTime(), address, comments: [] },
+        { id, x: xOffset, y: yPos, rotation: angle, type: idx % 2 === 0 ? 'left' : 'right', time: generateTime(), address, addressDetail, lat, lon, comments: [] },
       ]);
       targetScrollYRef.current = yPos;
       setIsLocating(false);
     };
 
     if (!useGps || !navigator.geolocation) {
-      appendFootprint(MOCK_ADDRESSES[Math.floor(Math.random() * MOCK_ADDRESSES.length)]);
+      appendFootprint(null);
       return;
     }
 
@@ -362,9 +409,12 @@ export default function App() {
       );
 
     getCurrentPosition()
-      .then(pos => reverseGeocode(pos.coords.latitude, pos.coords.longitude))
-      .then(address => appendFootprint(address))
-      .catch(() => appendFootprint(MOCK_ADDRESSES[Math.floor(Math.random() * MOCK_ADDRESSES.length)]));
+      .then(async (pos) => {
+        const { latitude, longitude } = pos.coords;
+        const result = await reverseGeocode(latitude, longitude);
+        appendFootprint(result?.simple ?? null, latitude, longitude, result?.detail ?? null);
+      })
+      .catch(() => appendFootprint(null));
   };
 
   const addFootprint = () => {
@@ -426,18 +476,15 @@ export default function App() {
         </div>
       )}
 
-      {/* 햄버거 버튼 + 브랜드 로고 */}
-      <div className="fixed top-4 left-4 z-30">
+      <header className="fixed top-0 w-full z-30 flex items-center justify-between px-4 pt-4 pointer-events-none">
         <button
           onClick={() => setShowSidebar(true)}
-          className="w-10 h-10 bg-white/90 backdrop-blur shadow-sm rounded-full flex items-center justify-center border border-gray-100 text-gray-600 hover:bg-white transition-colors"
+          className="w-10 h-10 bg-white/90 backdrop-blur shadow-sm rounded-full flex items-center justify-center border border-gray-100 text-gray-600 hover:bg-white transition-colors pointer-events-auto shrink-0"
           aria-label="메뉴 열기"
         >
           <Menu size={18} />
         </button>
-      </div>
 
-      <header className="fixed top-0 w-full z-20 flex justify-center pt-4 pointer-events-none">
         <div className="bg-white/90 backdrop-blur shadow-sm rounded-full px-5 py-2.5 flex items-center gap-4 pointer-events-auto border border-gray-100 relative">
           <IconButton name="icon-arrow-left-small-mono" aria-label="이전 날짜" variant="clear" iconSize={20} onClick={() => { const d = new Date(date); d.setDate(d.getDate() - 1); setDate(d); setFootprints(loadFromStorage(d) ?? []); setSelectedId(null); }} />
           <button onClick={() => setShowCalendar(!showCalendar)} className="font-bold text-gray-800 text-sm min-w-[100px] hover:text-[#FF5A42] transition-colors">
@@ -446,9 +493,11 @@ export default function App() {
           <IconButton name="icon-arrow-right-small-mono" aria-label="다음 날짜" variant="clear" iconSize={20} onClick={() => { const d = new Date(date); d.setDate(d.getDate() + 1); setDate(d); setFootprints(loadFromStorage(d) ?? []); setSelectedId(null); }} />
           <AnimatePresence>{showCalendar && <MiniCalendar selectedDate={date} onSelect={(d) => { setDate(d); setFootprints(loadFromStorage(d) ?? []); setSelectedId(null); }} onClose={() => setShowCalendar(false)} />}</AnimatePresence>
         </div>
+
+        <div className="w-10 shrink-0" />
       </header>
 
-      <div className="fixed top-24 right-4 z-20 flex flex-col gap-3 bg-white/70 p-2.5 rounded-2xl backdrop-blur-md shadow-sm border border-gray-100">
+      <div className="fixed top-[72px] right-4 z-20 flex flex-col gap-3 bg-white/70 p-2.5 rounded-2xl backdrop-blur-md shadow-sm border border-gray-100">
         <button onClick={() => setWeather('CherryBlossom')} className={`p-2.5 rounded-xl transition-all ${weather === 'CherryBlossom' ? 'bg-pink-100 text-pink-600 shadow-inner' : 'text-gray-400'}`}><Flower size={20}/></button>
         <button onClick={() => setWeather('Sunny')} className={`p-2.5 rounded-xl transition-all ${weather === 'Sunny' ? 'bg-lime-200 text-lime-800 shadow-inner' : 'text-gray-400'}`}><Sun size={20}/></button>
         <button onClick={() => setWeather('Rainy')} className={`p-2.5 rounded-xl transition-all ${weather === 'Rainy' ? 'bg-slate-300 text-slate-800 shadow-inner' : 'text-gray-400'}`}><CloudRain size={20}/></button>
@@ -469,7 +518,7 @@ export default function App() {
               <div className="flex items-center gap-2"><Clock size={16} className="text-gray-400" /><span className="font-bold text-gray-800 text-lg">{footprints.find(f => f.id === selectedId).time}</span></div>
               <button onClick={() => setShowComments(!showComments)} className={`p-2 rounded-full transition-all ${showComments ? 'bg-blue-100 text-blue-600' : 'text-gray-400 hover:bg-gray-50'}`}><MessageCircle size={18}/></button>
             </div>
-            <p className="text-gray-500 text-[11px] mb-3 flex items-center gap-1 font-medium"><MapPin size={12} /> {footprints.find(f => f.id === selectedId).address}</p>
+            <p className="text-gray-500 text-[11px] mb-3 flex items-center gap-1 font-medium"><MapPin size={12} /> {detailAddress ? (footprints.find(f => f.id === selectedId).addressDetail ?? footprints.find(f => f.id === selectedId).address ?? '위치 확인 중...') : (footprints.find(f => f.id === selectedId).address ?? '위치 확인 중...')}</p>
             <div className={`overflow-hidden transition-all duration-200 ease-in-out ${showComments ? 'max-h-48 opacity-100 mt-2' : 'max-h-0 opacity-0'}`}>
                   <div className="bg-gray-50/50 rounded-2xl p-2 border border-gray-100">
                     <div className="max-h-24 overflow-y-auto mb-2 space-y-1.5 px-1 scrollbar-hide text-[10px]">
@@ -510,23 +559,10 @@ export default function App() {
         </Button>
       </div>
 
-      <AlertDialog
-        open={showGpsRequired}
-        onClose={() => setShowGpsRequired(false)}
-        title="위치 권한이 필요해요"
-        description="발자국 기록에는 현재 위치 접근 권한이 필요해요. 발자국을 남기려면 위치 권한을 허용해 주세요."
-        alertButton={<AlertDialog.AlertButton onClick={() => setShowGpsRequired(false)}>확인</AlertDialog.AlertButton>}
-      />
-
       <ConfirmDialog
         open={showGpsConsent}
         title="위치 권한 안내"
-        description="발자국을 남기려면 현재 위치 접근 권한이 필요해요. 위치 정보는 서버에 전송되지 않고 내 기기에만 저장돼요."
-        cancelButton={
-          <TextButton size="small" style={{ color: '#3182f6' }} onClick={() => { setShowGpsConsent(false); setShowGpsRequired(true); }}>
-            허용 안 할게요
-          </TextButton>
-        }
+        description={`발자국을 기록하려면 현재 위치 접근 권한이 꼭 필요해요.\n위치 정보는 서버에 전송되지 않고 내 기기에만 저장되니 안심하세요.\n권한을 허용하지 않으시면 앱을 닫아 주세요.`}
         confirmButton={
           <Button variant="fill" onClick={() => { localStorage.setItem('gps-consent', 'true'); setShowGpsConsent(false); pendingLocate.current?.(true); }}>
             허용할게요
@@ -545,6 +581,7 @@ export default function App() {
           <LogsPage
             key="logs"
             onBack={() => setCurrentPage(null)}
+            detailAddress={detailAddress}
             onDateSelect={(d) => {
               setDate(d);
               setFootprints(loadFromStorage(d) ?? []);
@@ -556,6 +593,14 @@ export default function App() {
           <FeedbackPage
             key="feedback"
             onBack={() => setCurrentPage(null)}
+          />
+        )}
+        {currentPage === 'settings' && (
+          <SettingsPage
+            key="settings"
+            onBack={() => setCurrentPage(null)}
+            detailAddress={detailAddress}
+            onToggleDetailAddress={toggleDetailAddress}
           />
         )}
       </AnimatePresence>
