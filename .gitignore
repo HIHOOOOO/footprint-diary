@@ -31,3 +31,10 @@ dist-ssr
 
 # Local Claude settings
 .claude/settings.local.json
+.claude/
+
+# Build artifacts
+*.ait
+
+# Temp files
+*.tmp
