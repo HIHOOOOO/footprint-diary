@@ -32,6 +32,14 @@ const saveToStorage = (date, footprints) => {
   }
 };
 
+const haversineDistance = (lat1, lon1, lat2, lon2) => {
+  const R = 6371000;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = Math.sin(dLat / 2) ** 2 + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+};
+
 const getBgColor = (w) =>
   w === 'Rainy' ? '#cbd5e1'
   : w === 'Snowy' ? '#e2e8f0'
@@ -103,6 +111,16 @@ export default function App() {
     setDetailAddress(v);
     localStorage.setItem('fp-address-detail', String(v));
   };
+
+  const [aliases, setAliases] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('fp-aliases') || '[]'); }
+    catch { return []; }
+  });
+  const aliasesRef = useRef(aliases);
+  useEffect(() => { aliasesRef.current = aliases; }, [aliases]);
+  useEffect(() => {
+    localStorage.setItem('fp-aliases', JSON.stringify(aliases));
+  }, [aliases]);
   const [date, setDate] = useState(() => new Date());
   const [footprints, setFootprints] = useState(() => loadFromStorage(new Date()) ?? []);
   const [selectedId, setSelectedId] = useState(null);
@@ -151,7 +169,8 @@ export default function App() {
     const pending = footprints.filter(fp => !fp.address && fp.lat && fp.lon);
     if (pending.length === 0) return;
     pending.forEach(async (fp) => {
-      const result = await reverseGeocode(fp.lat, fp.lon);
+      const alias = aliasesRef.current.find(a => haversineDistance(fp.lat, fp.lon, a.lat, a.lon) <= a.radius);
+      const result = alias ? { simple: alias.name, detail: alias.name } : await reverseGeocode(fp.lat, fp.lon);
       if (!result) return;
       setFootprints(prev => prev.map(f => f.id === fp.id ? { ...f, address: result.simple, addressDetail: result.detail } : f));
     });
@@ -163,7 +182,8 @@ export default function App() {
     const pending = footprints.filter(fp => !fp.addressDetail && fp.lat && fp.lon);
     if (pending.length === 0) return;
     pending.forEach(async (fp) => {
-      const result = await reverseGeocode(fp.lat, fp.lon);
+      const alias = aliasesRef.current.find(a => haversineDistance(fp.lat, fp.lon, a.lat, a.lon) <= a.radius);
+      const result = alias ? { simple: alias.name, detail: alias.name } : await reverseGeocode(fp.lat, fp.lon);
       if (!result) return;
       setFootprints(prev => prev.map(f => f.id === fp.id ? { ...f, addressDetail: result.detail } : f));
     });
@@ -210,47 +230,43 @@ export default function App() {
     ctx.shadowOffsetY = -2;
     ctx.scale(1.2, 1.2);
 
-    // 공통 부츠 베이스 그리기
-    const drawBootBase = (color) => {
+    // 신발 밑창 그리기 (베지어 — 좌우 비대칭 아치로 왼발/오른발 구분)
+    const drawShoeSole = (color) => {
       ctx.fillStyle = color;
-      ctx.beginPath(); ctx.ellipse(0, -10, 10, 18, 0, 0, Math.PI * 2); ctx.fill();
-      ctx.beginPath(); ctx.ellipse(0, 15, 9, 12, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath();
+      ctx.moveTo(0, -21);
+      ctx.bezierCurveTo(-9, -18, -12, -6, -11, 2);   // 오른쪽 (메디알, 아치)
+      ctx.bezierCurveTo(-10, 6, -12, 14, -7, 20);
+      ctx.bezierCurveTo(-3, 23, 3, 23, 7, 20);        // 뒤꿈치
+      ctx.bezierCurveTo(11, 14, 11, 4, 10, -4);       // 왼쪽 (래터랄, 완만)
+      ctx.bezierCurveTo(9, -12, 6, -19, 0, -21);
+      ctx.closePath();
+      ctx.fill();
     };
 
     if (weather === 'Rainy') {
-      ctx.fillStyle = isSelected ? "#1e293b" : "#334155"; 
-      ctx.beginPath(); ctx.moveTo(0, -25); ctx.bezierCurveTo(-12, -25, -12, 10, -10, 20); 
-      ctx.bezierCurveTo(-5, 30, 5, 30, 10, 20); ctx.bezierCurveTo(12, 10, 12, -25, 0, -25); ctx.fill();
+      drawShoeSole(isSelected ? "#1e293b" : "#334155");
     } else if (weather === 'Sunny') {
-      // 요구사항 2: 초원 배경은 진한 초록색 발자국
-      const greenColor = isSelected ? "#064e3b" : "#14532d"; 
-      drawBootBase(greenColor);
-      // 초원 디테일 (작은 풀잎)
+      drawShoeSole(isSelected ? "#064e3b" : "#14532d");
       ctx.fillStyle = "#65a30d"; ctx.beginPath(); ctx.arc(-6, -15, 1.5, 0, Math.PI * 2); ctx.fill();
     } else if (weather === 'CherryBlossom') {
-      drawBootBase(isSelected ? "#502020" : "#8a4b4b");
+      drawShoeSole(isSelected ? "#502020" : "#8a4b4b");
       ctx.fillStyle = "#fbcfe8"; ctx.beginPath(); ctx.arc(5, -12, 2.5, 0, Math.PI * 2); ctx.fill();
     } else if (weather === 'Snowy') {
-      // 요구사항 1: 눈 발자국 가로줄 자국 추가
-      drawBootBase(isSelected ? "#0f172a" : "#1e293b");
-      
+      drawShoeSole(isSelected ? "#0f172a" : "#1e293b");
       ctx.strokeStyle = "rgba(255, 255, 255, 0.3)";
       ctx.lineWidth = 1.5;
       ctx.beginPath();
-      // 부츠 밑창 패턴 (가로줄)
-      ctx.moveTo(-7, -16); ctx.lineTo(7, -16);
-      ctx.moveTo(-8, -10); ctx.lineTo(8, -10);
-      ctx.moveTo(-8, -4); ctx.lineTo(8, -4);
-      ctx.moveTo(-7, 2); ctx.lineTo(7, 2);
-      // 뒤꿈치 패턴
-      ctx.moveTo(-6, 12); ctx.lineTo(6, 12);
-      ctx.moveTo(-6, 18); ctx.lineTo(6, 18);
+      ctx.moveTo(-8, -12); ctx.lineTo(7, -12);
+      ctx.moveTo(-9,  -4); ctx.lineTo(8,  -4);
+      ctx.moveTo(-8,   8); ctx.lineTo(7,   8);
+      ctx.moveTo(-5,  16); ctx.lineTo(5,  16);
       ctx.stroke();
     }
-    
+
     if (isSelected) {
-      ctx.strokeStyle = weather === 'Sunny' ? "#65a30d" : weather === 'CherryBlossom' ? "#f472b6" : "#3b82f6"; 
-      ctx.lineWidth = 2; ctx.strokeRect(-15, -30, 30, 60); 
+      ctx.strokeStyle = weather === 'Sunny' ? "#65a30d" : weather === 'CherryBlossom' ? "#f472b6" : "#3b82f6";
+      ctx.lineWidth = 2; ctx.strokeRect(-15, -28, 30, 58);
     }
     ctx.restore();
   };
@@ -383,9 +399,10 @@ export default function App() {
     const appendFootprint = (address, lat = null, lon = null, addressDetail = null) => {
       const id = Date.now();
       const idx = footprintsRef.current.length;
-      const yPos = idx * 120;
-      const xOffset = Math.sin(idx * 0.5) * 60;
-      const angle = Math.cos(idx * 0.5) * 0.5;
+      const yPos = idx * 100;
+      const isLeft = idx % 2 === 0;
+      const xOffset = (isLeft ? -22 : 22) + Math.sin(idx * 1.7) * 4;
+      const angle = (isLeft ? -0.12 : 0.12) + Math.cos(idx * 1.3) * 0.05;
       setFootprints(prev => [
         ...prev,
         { id, x: xOffset, y: yPos, rotation: angle, type: idx % 2 === 0 ? 'left' : 'right', time: generateTime(), address, addressDetail, lat, lon, comments: [] },
@@ -411,7 +428,8 @@ export default function App() {
     getCurrentPosition()
       .then(async (pos) => {
         const { latitude, longitude } = pos.coords;
-        const result = await reverseGeocode(latitude, longitude);
+        const alias = aliasesRef.current.find(a => haversineDistance(latitude, longitude, a.lat, a.lon) <= a.radius);
+        const result = alias ? { simple: alias.name, detail: alias.name } : await reverseGeocode(latitude, longitude);
         appendFootprint(result?.simple ?? null, latitude, longitude, result?.detail ?? null);
       })
       .catch(() => appendFootprint(null));
@@ -601,6 +619,9 @@ export default function App() {
             onBack={() => setCurrentPage(null)}
             detailAddress={detailAddress}
             onToggleDetailAddress={toggleDetailAddress}
+            aliases={aliases}
+            onAliasAdd={(alias) => setAliases(prev => [...prev, alias])}
+            onAliasDelete={(id) => setAliases(prev => prev.filter(a => a.id !== id))}
           />
         )}
       </AnimatePresence>
